@@ -1,0 +1,118 @@
+#%RAML 1.0
+title: Enterprise API Management
+baseUri: http://localhost:8081
+protocols: [ HTTP , HTTPS ]
+version: 1.0.0
+
+traits:
+  client-id-required:
+    headers:
+      client_id:
+        type: string
+      client_secret:
+        type: string
+  applicationName-required:
+    queryParameters:
+      applicationName:
+        type: string
+
+types:
+  application:
+    type: object
+    properties: 
+      name: string
+      
+/v1/application:
+  /{applicationName}:
+    description: This is the name of the application. In cloudhub speak this is the domain for the application
+    get:
+      
+      is: [client-id-required, applicationName-required]
+
+      responses: 
+        200:
+          description: There is no response body as of now. Will return 200 if the application exists
+          body:
+            application/json:
+        404:
+          description: The requested resource could not be found
+        500:
+          description: Internal error- When unexpected condition occurs
+    
+    /deploy:
+      post:
+
+        is: [client-id-required, applicationName-required]
+        body: 
+          multipart/form-data:
+            description: Just the stream of the zip file. This is only for application code replacement
+            properties:
+              
+              file:
+                type: file
+                required: true
+        responses: 
+          200:
+            description: There is no response body as of now. Will return 200 if the application exists
+            body:
+              application/json:
+          500:
+            description: Internal error- When unexpected condition occurs
+/v1/exchange:
+  /create:
+  
+    post:
+      is: [client-id-required]
+      body:
+        multipart/form-data:
+          description: oas/wsdl files. This is only for asset creation
+          properties:
+            name:
+              type: string
+              required: true
+            assetId:
+              type: string
+              required: true
+            version:
+              type: string
+              required: true
+            classifier:
+              type: string
+              required: true
+            apiVersion:
+              type: string
+              required: true
+            type:
+              type: string
+              required: true
+            file:
+              type: file
+              required: true
+            groupId:  
+              type: file
+              required: true
+            organizationId:
+              type: file
+              required: true
+              
+                           
+      responses:
+         200:
+          body:
+            application/json:
+  /{applicationName}:
+    get:
+      is: [client-id-required]
+      responses:
+        200:
+          body:
+            application/json:
+/v1/manage:
+  post:
+    is: [client-id-required]
+    body:
+      application/json:
+    responses:
+      200:
+        body:
+          application/json:

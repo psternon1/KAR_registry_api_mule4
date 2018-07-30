@@ -1,0 +1,26 @@
+{
+  "configs": [
+    "kar-registry-utilities-impl.xml",
+    "kar-apiplatform-utilities-api.xml",
+    "mulesoft-system-api-impl.xml",
+    "configurations.xml"
+  ],
+  "secureProperties": [],
+  "redeploymentEnabled": true,
+  "name": "kar-anypointplatform-utilities-api",
+  "minMuleVersion": "4.1.2",
+  "requiredProduct": "MULE_EE",
+  "classLoaderModelLoaderDescriptor": {
+    "id": "mule",
+    "attributes": {
+      "exportedPackages": [],
+      "exportedResources": [
+        "api/kar-apiplatform-utilities.raml"
+      ]
+    }
+  },
+  "bundleDescriptorLoader": {
+    "id": "mule",
+    "attributes": {}
+  }
+}

@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<flow name="get-cloudhub-deployed-application-flow" doc:id="175a2351-0c69-4fa3-87aa-8470d8887bae" >
+		<http:request method="GET" doc:name="get Application" doc:id="8467f394-017d-44dc-b49c-a5bf4cba0baf" config-ref="HTTP_Request_configuration1" path="api/v2/applications/{applicationName}">
+			<http:headers><![CDATA[#[output applicaton/java
+---
+{
+	Authorization : "Basic cHN0ZXJub243OkFuYXJjaHkx",
+	"Content-Type" : "application/json"
+}]]]></http:headers>
+			<http:uri-params><![CDATA[#[output applicaton/java
+---
+{
+	"applicationName" : vars.applicationName
+}]]]></http:uri-params>
+		</http:request>
+	</flow>
+	<flow name="get-application-properties-Flow" doc:id="9fc3193b-7114-4740-8a08-12efa912ee32" >
+		<ee:transform doc:name="set application Properties" doc:id="5aaf2115-9443-47c6-b45f-8b68e4be09fd" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{}]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="appProperties" ><![CDATA[%dw 2.0
+output application/json
+---
+
+  {
+    "key": "property1",
+    "value": "value1"
+  }
+  
+  
+]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="6f1a9c70-6e6f-4a09-8faa-dd5f9e2f299b" >
+				<ee:transform doc:name="set default application properties" doc:id="55544cb6-020b-4a30-9f47-7c5bfee8c961" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="appProperties" ><![CDATA[%dw 2.0
+output application/java
+---
+{
+}]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+			</on-error-continue>
+		</error-handler>
+	</flow>
+	<flow name="get-anypointplatform-token-Flow" doc:id="67b1fa5c-4b63-42f9-ab1c-e3975a539149" >
+		<ee:transform doc:name="setup platform user/pwd" doc:id="7e850149-a7ba-4474-bc1c-b27bafa1892f" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"username":"psternon7",
+	"password":"Anarchy1"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="POST" doc:name="Request token" doc:id="c366e9b1-5fb0-4f69-90d8-1f334bc72701" config-ref="HTTP_Request_configuration" path="/accounts/login" />
+		<ee:transform doc:name="setup authToken" doc:id="839bb22c-d19b-4054-9eca-b5f887a8c140" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{}]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="authToken" ><![CDATA[%dw 2.0
+output application/json
+var bearer="Bearer "
+---
+{
+	authToken: bearer ++ payload.access_token 
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+	</flow>
+	<flow name="build-appInfoJson-impl-Flow" doc:id="d1ad263a-64a9-4ae2-84c7-115fab1abc8d" >
+		<flow-ref doc:name="get-application-properties-Flow" doc:id="c3eae6ce-5ce3-473d-8333-5151163e72d5" name="get-application-properties-Flow"/>
+		<ee:transform doc:name="create appInfoJson" doc:id="545ccc36-5dd9-4aba-9c15-f740be173d85" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+}]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="appInfoJson" ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "domain": vars.applicationName,
+  "muleVersion": {
+    "version": "3.9.1"
+  },
+  "properties": vars.appProperties,
+  "region": "us-east-1",
+  "monitoringEnabled": "true",
+  "monitoringAutoRestart": "true",
+  "workers": {
+    "amount": "1",
+    "type": {
+      "name": "Micro",
+      "weight": 0.1 ,
+      "cpu": "0.1 vCore",
+      "memory": "500 MB memory"
+    }
+  },
+  "loggingNgEnabled": "true",
+  "persistentQueues": "false"
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="58b11b9b-f5bc-4600-942f-f8cac54a850d" message="#[vars.appInfoJson]"/>
+	</flow>
+</mule>

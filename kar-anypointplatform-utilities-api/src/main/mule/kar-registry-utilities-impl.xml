@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw"
+	xmlns:netsuite="http://www.mulesoft.org/schema/mule/netsuite" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/netsuite http://www.mulesoft.org/schema/mule/netsuite/current/mule-netsuite.xsd">
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="e71fd0c3-a2ec-43c7-a2d8-44b72bce34b6" >
+		<http:request-connection host="anypoint.mulesoft.com" port="443" protocol="HTTPS"/>
+	</http:request-config>
+	<http:request-config name="HTTP_Request_configuration1" doc:name="HTTP Request configuration" doc:id="98e95d36-4be9-45f2-ad2a-43845c9a1d38" basePath="/cloudhub/">
+		<http:request-connection protocol="HTTPS" host="anypoint.mulesoft.com" port="443" />
+	</http:request-config>
+	<flow name="setup-application-deploy-payload-flow" doc:id="1fada4e1-86b7-4365-ad8c-a857fb95134d" >
+		<flow-ref doc:name="build-appInfoJson-impl-Flow" doc:id="ebfb61b6-c300-48f7-a4bf-5f4ace3b806a" name="build-appInfoJson-impl-Flow" />
+		<ee:transform doc:name="configure Attachments" doc:id="e1b19726-2185-4dcf-b32c-8000494fd5a7">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output multipart/form-data
+---
+{
+	
+    parts : {
+    file : {
+      headers : {
+        "Content-Disposition" : {
+        	    "name":"file",
+            "filename": vars.filename
+        },
+        "Content-Type" : "application/zip"
+      },
+      content : vars.fileinput
+    },
+    appInfoJson:{headers : {
+        "Content-Disposition" : {
+            "name": "appInfoJson"
+        },
+        
+       "Content-Type" : "application/json" 
+    },
+    content : vars.appInfoJson
+    },
+    autoStart:{headers : {
+        "Content-Disposition" : {
+            "name": "autoStart"
+        },
+        
+      
+      },
+      content : vars.autoStart
+    },
+    environmentId:{headers : {
+        
+        "Content-Disposition" : {
+            "name": "environmentId"
+        },
+     
+      },
+       content : vars.environmentId
+      
+      
+    }
+    
+    }
+    
+    
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="get-application-impl-flow" doc:id="7b939fa5-e74c-442b-b1ca-0f9ad7483626" >
+		<flow-ref doc:name="get-anypointplatform-token-Flow" doc:id="719bb97c-4bb0-4306-82c8-24cb972c5c53" name="get-anypointplatform-token-Flow" />
+		<logger level="INFO" doc:name="Logger" doc:id="248dd262-ff7f-4b5b-aef2-52a1e086fdc4" message="the auth = #[vars.authToken.authToken] #[vars.applicationName]" />
+		<flow-ref doc:name="get-cloudhub-deployed-application-flow" doc:id="13fefe3d-e5e2-4726-8952-20b0965eb686" name="get-cloudhub-deployed-application-flow" />
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="Copy_of_On Error Propagate" doc:id="5144f1b0-5f55-43fd-8af4-385925cfe0f5" type="ANY" >
+				<ee:transform doc:name="Copy_of_Transform Message" doc:id="07b0c00b-6727-4f69-b5b0-d6ed126228b4" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": error.description
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<logger level="INFO" doc:name="Copy_of_Logger" doc:id="bc885deb-d003-4142-b497-7052952ed8c1" message="in the exception #[payload]" />
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="publish—exchange-impl-Flow" doc:id="36a332aa-0661-472a-843f-2928c289f873" >
+		<logger level="INFO" doc:name="Logger" doc:id="b13cab6b-787b-4013-8b61-3efbd53de3e1" message=" #[payload] " />
+		<set-variable value="#[payload]" doc:name="input payload for Exchange API" doc:id="62067412-3445-4220-9636-fe51783c606c" variableName="inputPayload" />
+		<flow-ref doc:name="get-anypointplatform-token-Flow" doc:id="dbb05e5f-2b39-45d0-a2af-b3bc75f64920" name="get-anypointplatform-token-Flow"/>
+		<logger level="INFO" doc:name="Logger" doc:id="804e107e-5440-4750-a781-219f4de7ecca" message=" The token ????? #[vars.authToken.authToken]"/>
+		<http:request method="POST" doc:name="post to exchange" doc:id="59eab88e-0cb8-4dd5-81e8-7144ea1490ef" path="/exchange/api/v1/assets" config-ref="HTTP_Request_configuration" followRedirects="false" sendBodyMode="AUTO" requestStreamingMode="AUTO">
+			<http:body ><![CDATA[#[vars.inputPayload]]]></http:body>
+			<http:headers ><![CDATA[#[output applicaton/java
+---
+{
+	Authorization : vars.authToken.authToken
+}]]]></http:headers>
+		</http:request>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="536ad50f-6569-410a-9b01-30a8a596f61d" type="ANY">
+				<ee:transform doc:name="Transform Message" doc:id="6f5618cc-d546-46b2-9dfd-1a0cd0d5819d" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": error.description
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<logger level="INFO" doc:name="Logger" doc:id="e8cefbc9-e2ae-42b3-89e3-dd8574c91084" message="in the exception #[payload]"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="deploy-application-impl-Flow" doc:id="4bd292c9-4975-4b60-afdb-35835a76261a" >
+		<logger level="INFO" doc:name="Logger" doc:id="71e8c971-9009-4e3c-8aee-b4c6b149da73" message="DEPLOY&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt; #[vars.applicationName] "/>
+		<logger level="INFO" doc:name="Logger" doc:id="06f2c0d5-8064-4bd4-a64e-e171c447a0aa" message="#[payload]"/>
+		<set-variable value="#[payload.parts.file.content]" doc:name="fileinput" doc:id="8372053c-575a-4ae6-b8ea-3d0dc493dc64" variableName="fileinput" mimeType="application/zip"/>
+		<set-variable value="#[payload.parts.filename.content]" doc:name="filename" doc:id="495820f9-85bf-44e2-af08-04a86df065ec" variableName="filename" mimeType="text/plain"/>
+		<choice doc:name="Choice" doc:id="f6f1167f-d5ac-4fb2-9627-be0843047e02" >
+			<when expression='true' >
+				<set-variable value="#['3.9.1']" doc:name="Set Variable" doc:id="eb8c0565-8e69-4365-8c37-6638f15f1d36" variableName="version"/>
+			</when>
+			<otherwise >
+				<set-variable value="#['4.1.2']" doc:name="Set Variable" doc:id="a78f1638-808e-4327-b63d-f4a583f9e5b4" variableName="version"/>
+			</otherwise>
+		</choice>
+		<logger level="INFO" doc:name="Logger" doc:id="283af5dc-78f7-4ca5-8a95-352b87d74093" message="FILENAME = #[vars.filename] #[vars.version]"/>
+		<set-variable value="#[payload.parts.autoStart.content]" doc:name="autoStart" doc:id="bf435a9f-f832-4dbc-9270-5f665c26b35c" variableName="autoStart"/>
+		<set-variable value="#[payload.parts.environmentId.content]" doc:name="environmentId" doc:id="5e3145e8-7dc4-4806-9123-2103d88342f4" variableName="environmentId"/>
+		<set-variable value="#[true]" doc:name="doDeploy" doc:id="7dce5e44-3722-41ef-aae8-8803e59334c4" variableName="doDeploy"/>
+		<flow-ref doc:name="get-application-impl-flow" doc:id="5bb6e436-c70b-495e-a531-f608f7dc1775" name="get-application-impl-flow" />
+		<flow-ref doc:name="update-application-impl-Flow" doc:id="b4955ed2-5f20-42db-99b5-d42944dd9be8" name="update-application-impl-Flow"/>
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue (application does not exist)" doc:id="0690fff4-14f2-45ab-95e1-427c470247c9" >
+				<choice doc:name="doDeploy" doc:id="56ae2dc1-4b80-4fcc-bbc7-06f19480c07e" >
+					<when expression="#[vars.doDeploy]" >
+						<flow-ref doc:name="create-application--impl-Flow" doc:id="7ef64f20-bf3b-4441-902c-d81ead7a4545" name="create-application--impl-Flow" />
+					</when>
+					<otherwise >
+						<ee:transform doc:name="set error message" doc:id="8be673b1-e93a-4118-87dc-a5f49d6cba85" >
+							<ee:message >
+								<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": error.description
+}]]></ee:set-payload>
+							</ee:message>
+						</ee:transform>
+					</otherwise>
+				</choice>
+			</on-error-continue>
+		</error-handler>
+	</flow>
+	<flow name="create-application--impl-Flow" doc:id="7d416546-ea16-4198-8b18-c6f96585fb2e" >
+		<logger level="INFO" doc:name="Logger" doc:id="df4f3441-470d-471b-9ad1-cccdfc1dc69a" message="CREATE!!!!!!!!!"/>
+		<flow-ref doc:name="setup-application-deploy-payload-flow" doc:id="8b2c39d6-1631-475f-a8e6-b441a8f0bc36" name="setup-application-deploy-payload-flow" />
+		<logger level="INFO" doc:name="Logger" doc:id="56f935fd-501e-4f7b-8f2c-1f3d535861fb" message="END THE PAYLOAD IS??? "/>
+		<http:request method="POST" doc:name="Create new application" doc:id="5306e09c-45b1-45da-8697-7412c51f64b3" config-ref="HTTP_Request_configuration1" path="api/v2/applications">
+			<http:headers><![CDATA[#[output applicaton/java
+---
+{
+	Authorization : vars.authToken.authToken
+}]]]></http:headers>
+		</http:request>
+	</flow>
+	<flow name="update-application-impl-Flow" doc:id="4b4c41c9-4860-4d52-be3f-b64352ff8356" >
+		<logger level="INFO" doc:name="Logger" doc:id="7c1415fa-6b76-4d4f-b2b7-32dab3a526dd" message="UPDATE!!!!!!!!!!!!!!!"/>
+		<flow-ref doc:name="setup-application-deploy-payload-flow" doc:id="f1a061ae-da01-45bb-8405-e25e6766acad" name="setup-application-deploy-payload-flow"/>
+		<http:request method="PUT" doc:name="Update Application" doc:id="8b86056a-046e-4838-a102-f2cef03a2caf" config-ref="HTTP_Request_configuration1" path="api/v2/applications/{domain}">
+			<http:headers ><![CDATA[#[output applicaton/java
+---
+{
+	Authorization : vars.authToken.authToken
+}]]]></http:headers>
+			<http:uri-params ><![CDATA[#[output applicaton/java
+---
+{
+	domain : vars.applicationName
+}]]]></http:uri-params>
+		</http:request>
+		<error-handler>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="b57375cb-1234-46da-8023-86f74427bc16" type="ANY">
+				<logger level="INFO" doc:name="Logger" doc:id="52cbb3d6-6c41-4f01-a4e4-681b02addcbc" message="propagate"/>
+				<set-variable value="#[false]" doc:name="Set Variable" doc:id="ec2134c3-9082-4fa1-9858-9c4dc00a2446" variableName="doDeploy"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+</mule>

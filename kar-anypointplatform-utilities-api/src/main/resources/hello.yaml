@@ -1,0 +1,18 @@
+{
+    
+    "swaggerVersion": "1.2",
+    "apis": [
+        {
+            "path": "http://localhost:8080/api-docs/mobile-api/example_NewsController",
+            "description": "example.NewsController"
+        }
+    ],
+    "info": {
+        "title": "News API",
+        "description": "Mobile applications and beyond!",
+        "termsOfServiceUrl": "https://helloreverb.com/terms/",
+        "contact": "matt@raibledesigns.com",
+        "license": "Apache 2.0",
+        "licenseUrl": "http://www.apache.org/licenses/LICENSE-2.0.html"
+    }
+}

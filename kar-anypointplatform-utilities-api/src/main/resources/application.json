@@ -1,0 +1,63 @@
+{
+    "versionId": "5b478470b2455910ddfecdf8",
+    "domain": "kar-users-api-dev",
+    "fullDomain": "kar-users-api-dev.us-e2.cloudhub.io",
+    "properties": {
+        "anypoint.platform.analytics_base_uri": "https://analytics-ingest.anypoint.mulesoft.com/",
+        "anypoint.platform.client_id": "c6ec7471197043d0b1381a4c549feac9",
+        "anypoint.platform.client_secret": "5f3cA4B2172C44b99dA3bDdDC1B2688A",
+        "anypoint.platform.base_uri": "https://anypoint.mulesoft.com/"
+    },
+    "propertiesOptions": {},
+    "status": "STARTED",
+    "workers": {
+        "type": {
+            "name": "Micro",
+            "weight": 0.1,
+            "cpu": "0.1 vCores",
+            "memory": "500 MB memory"
+        },
+        "amount": 1,
+        "remainingOrgWorkers": 1.9000000000000001,
+        "totalOrgWorkers": 2.7
+    },
+    "workerStatuses": [
+        {
+            "id": "i-009ba6742b259d7e8",
+            "host": "18.221.61.97",
+            "port": 0,
+            "status": "STARTED",
+            "deployedRegion": "us-east-2",
+            "staticIPEnabled": false
+        }
+    ],
+    "lastUpdateTime": 1531835840201,
+    "fileName": "kar-users-api-1.0.0-SNAPSHOT-mule-application.jar",
+    "muleVersion": {
+        "version": "4.1.2",
+        "updateId": "5b4658ebf6506710d52369cb",
+        "endOfSupportDate": 1633824000000
+    },
+    "region": "us-east-2",
+    "persistentQueues": false,
+    "persistentQueuesEncryptionEnabled": true,
+    "persistentQueuesEncrypted": false,
+    "monitoringEnabled": true,
+    "monitoringAutoRestart": true,
+    "staticIPsEnabled": false,
+    "hasFile": true,
+    "secureDataGatewayEnabled": false,
+    "loggingNgEnabled": true,
+    "loggingCustomLog4JEnabled": false,
+    "insightsReplayDataRegion": "us-east-2",
+    "deploymentGroup": {
+        "id": "5ac685b0de9e5022ac802745",
+        "name": "US East (Ohio)"
+    },
+    "updateRuntimeConfig": false,
+    "trackingSettings": {
+        "trackingLevel": "DISABLED"
+    },
+    "logLevels": [],
+    "ipAddresses": []
+}
